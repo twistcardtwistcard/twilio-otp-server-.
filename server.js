@@ -20,10 +20,15 @@ app.use(express.json());
 // Serve static files like otp-form.html
 app.use(express.static(path.join(__dirname)));
 
-// --- SEND OTP ---
+// ✅ Format phone number in E.164
+function formatPhoneNumber(phone) {
+  return phone.startsWith('+') ? phone : `+${phone}`;
+}
+
+// 🔹 SEND OTP
 app.post('/send-otp', async (req, res) => {
   const { phone } = req.body;
-  const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+  const formattedPhone = formatPhoneNumber(phone);
 
   try {
     const verification = await client.verify.v2.services(serviceSid)
@@ -32,25 +37,28 @@ app.post('/send-otp', async (req, res) => {
 
     res.json({ success: true, status: verification.status });
   } catch (err) {
+    console.error('Send OTP error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// --- VERIFY OTP ---
+// 🔹 VERIFY OTP + FETCH 4 MIDDLE DIGITS OF TWIST CODE
 app.post('/verify-otp', async (req, res) => {
   const { phone, code } = req.body;
-  const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+  const formattedPhone = formatPhoneNumber(phone);
 
   try {
     const check = await client.verify.v2.services(serviceSid)
       .verificationChecks
       .create({ to: formattedPhone, code });
 
+    console.log('✅ Twilio verification result:', check);
+
     if (check.status !== 'approved') {
-      return res.json({ success: false, error: 'OTP non valide.' });
+      return res.json({ success: false, error: 'Code invalide.' });
     }
 
-    // Fetch TWIST code from status server
+    // Fetch latest status entry from twist-status-server
     const response = await fetch(`${process.env.TWIST_STATUS_SERVER_URL}/check-latest?phone=${phone}`, {
       headers: {
         'x-api-key': process.env.GET_API_KEY
@@ -63,18 +71,17 @@ app.post('/verify-otp', async (req, res) => {
       return res.json({ success: false, message: 'Aucun code TWIST trouvé pour ce numéro.' });
     }
 
-    const code = data.code.toString();
-    const middle4 = code.slice(4, 8); // Get the 4 middle digits of the 12-digit code
+    const codeStr = data.code.toString();
+    const middle4 = codeStr.slice(4, 8);
 
     return res.json({ success: true, middle4 });
 
   } catch (err) {
-    console.error('OTP verification failed:', err);
+    console.error('Verify OTP error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Start server
 app.listen(port, () => {
   console.log(`✅ Twilio OTP server running on port ${port}`);
 });

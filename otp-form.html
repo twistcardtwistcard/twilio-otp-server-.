@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Vérification TWIST</title>
+  <title>Obtenez votre TWIST code</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,36 +11,78 @@
       margin: auto;
       text-align: left;
     }
-    input, button {
+
+    h2 {
+      color: #230042;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input {
       padding: 10px;
-      margin: 8px 0;
+      margin: 5px 0 15px 0;
       width: 100%;
       font-size: 16px;
+      box-sizing: border-box;
     }
+
+    button {
+      background-color: #230042;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 17px;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
     .hidden {
       display: none;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    h4 {
+      color: #230042;
+      font-size: 20px;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-  <h2>Vérifiez votre numéro</h2>
+
+  <h2>Obtenez votre TWIST code</h2>
 
   <div id="step1">
-    <label for="phone">Numéro de téléphone (ex: 14185551234)</label>
+    <label for="phone">Numéro de téléphone (Ex : 16434445555)</label>
     <input type="tel" id="phone" placeholder="Entrez votre numéro sans le +">
-    <button onclick="sendOTP()">📨 Envoyer le code</button>
-    <div id="send-error" style="color: red;"></div>
+    <button onclick="sendOTP()">Envoyer le code</button>
+    <div id="send-error" class="error"></div>
   </div>
 
   <div id="step2" class="hidden">
     <label for="otp">Code reçu</label>
     <input type="text" id="otp" placeholder="Code à 6 chiffres">
-    <button onclick="verifyOTP()">✅ Vérifier</button>
-    <div id="verify-error" style="color: red;"></div>
+    <button onclick="verifyOTP()">Vérifier</button>
+    <div id="verify-error" class="error"></div>
   </div>
 
   <div id="result" class="hidden">
-    <p><strong>TWIST Code :</strong> <span id="middle4"></span></p>
+    <h4>TWIST Code : <span id="middle4"></span></h4>
   </div>
 
   <script>

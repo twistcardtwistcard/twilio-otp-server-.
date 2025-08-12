@@ -68,8 +68,8 @@
   <h2>Obtenez votre TWIST code</h2>
 
   <div id="step1">
-    <label for="phone">Numéro de téléphone (Ex : 16434445555)</label>
-    <input type="tel" id="phone" placeholder="Entrez votre numéro sans le +">
+    <label for="phone">Numéro de téléphone</label>
+    <input type="tel" id="phone" placeholder="Entrez votre numéro" value="1">
     <button onclick="sendOTP()">Envoyer le code</button>
     <div id="send-error" class="error"></div>
   </div>
@@ -86,23 +86,12 @@
   </div>
 
   <script>
-    // ✅ Prefill phone if SuiteDash variable exists
-    document.addEventListener("DOMContentLoaded", function () {
-      if (typeof window.clientPhone !== "undefined" && window.clientPhone) {
-        document.getElementById("phone").value = window.clientPhone;
-      } else if ("{{clientPhone}}" && "{{clientPhone}}".indexOf("{{") === -1) {
-        // SuiteDash should replace {{clientPhone}} with actual number
-        document.getElementById("phone").value = "{{clientPhone}}";
-      }
-    });
-
     async function sendOTP() {
       const phone = document.getElementById("phone").value.trim();
       document.getElementById("send-error").textContent = "";
 
       if (!phone.match(/^1\d{10}$/)) {
-        document.getElementById("send-error").textContent =
-          "Entrez un numéro valide commençant par 1 (ex: 14185551234)";
+        document.getElementById("send-error").textContent = "Entrez un numéro valide commençant par 1 (ex: 14185551234)";
         return;
       }
 
@@ -117,8 +106,7 @@
         document.getElementById("step1").classList.add("hidden");
         document.getElementById("step2").classList.remove("hidden");
       } else {
-        document.getElementById("send-error").textContent =
-          "Erreur lors de l'envoi du code.";
+        document.getElementById("send-error").textContent = "Erreur lors de l'envoi du code.";
       }
     }
 
@@ -139,8 +127,7 @@
         document.getElementById("result").classList.remove("hidden");
         document.getElementById("middle4").textContent = data.middle4;
       } else {
-        document.getElementById("verify-error").textContent =
-          data.error || data.message || "Code invalide.";
+        document.getElementById("verify-error").textContent = data.error || data.message || "Code invalide.";
       }
     }
   </script>

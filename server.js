@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname)));
 
 // ✅ Format phone number in E.164
 function formatPhoneNumber(phone) {
-  return phone.startsWith('+') ? phone : `+${phone}`;
+  return phone.startsWith('+') ? phone : +${phone};
 }
 
 // 🔹 SEND OTP
@@ -59,7 +59,7 @@ app.post('/verify-otp', async (req, res) => {
     }
 
     // Fetch latest status entry from twist-status-server
-    const response = await fetch(`${process.env.TWIST_STATUS_SERVER_URL}/check-latest?phone=${phone}`, {
+    const response = await fetch(${process.env.TWIST_STATUS_SERVER_URL}/check-latest?phone=${phone}, {
       headers: {
         'x-api-key': process.env.GET_API_KEY
       }
@@ -83,5 +83,5 @@ app.post('/verify-otp', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`✅ Twilio OTP server running on port ${port}`);
+  console.log(✅ Twilio OTP server running on port ${port});
 });

@@ -20,9 +20,14 @@ app.use(express.json());
 // Serve static files like otp-form.html
 app.use(express.static(path.join(__dirname)));
 
-// ✅ Format phone number in E.164
+// ✅ Format phone number in E.164 (expects digits or already +E164)
 function formatPhoneNumber(phone) {
-  return phone.startsWith('+') ? phone : `+${phone}`;
+  const s = String(phone || '');
+  if (s.startsWith('+')) return s;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  return `+${digits}`; // fallback
 }
 
 // 🔹 SEND OTP
@@ -42,7 +47,7 @@ app.post('/send-otp', async (req, res) => {
   }
 });
 
-// 🔹 VERIFY OTP + FETCH 4 MIDDLE DIGITS OF TWIST CODE
+// 🔹 VERIFY OTP -> ask status server for middle4 from latest loan by phone
 app.post('/verify-otp', async (req, res) => {
   const { phone, code } = req.body;
   const formattedPhone = formatPhoneNumber(phone);
@@ -58,8 +63,9 @@ app.post('/verify-otp', async (req, res) => {
       return res.json({ success: false, error: 'Code invalide.' });
     }
 
-    // Fetch latest status entry from twist-status-server
-    const response = await fetch(`${process.env.TWIST_STATUS_SERVER_URL}/check-latest?phone=${phone}`, {
+    // Ask status server to map phone -> latest loan -> twistcode.middle4
+    const encoded = encodeURIComponent(formattedPhone);
+    const response = await fetch(`${process.env.TWIST_STATUS_SERVER_URL}/code/middle4-by-phone?phone=${encoded}`, {
       headers: {
         'x-api-key': process.env.GET_API_KEY
       }
@@ -67,14 +73,11 @@ app.post('/verify-otp', async (req, res) => {
 
     const data = await response.json();
 
-    if (!data.code) {
-      return res.json({ success: false, message: 'Aucun code TWIST trouvé pour ce numéro.' });
+    if (!data.success) {
+      return res.json({ success: false, message: data.message || 'Aucun code TWIST trouvé pour ce numéro.' });
     }
 
-    const codeStr = data.code.toString();
-    const middle4 = codeStr.slice(4, 8);
-
-    return res.json({ success: true, middle4 });
+    return res.json({ success: true, middle4: data.middle4 });
 
   } catch (err) {
     console.error('Verify OTP error:', err);

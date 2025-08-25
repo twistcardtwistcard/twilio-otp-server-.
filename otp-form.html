@@ -49,7 +49,7 @@
     <input type="hidden" id="phone" />
     <button id="sendBtn" type="button" disabled>ENVOYER UN CODE</button>
     <div id="send-error" class="error"></div>
-    <div class="muted">Si le bouton est grisé, le numéro n’a pas été détecté.</div>
+    <div class="muted">Si le bouton n'est pas actif, contactez-nous.</div>
   </div>
 
   <!-- Étape 2 -->
@@ -104,7 +104,7 @@
       // If parent provides a human display string, show it; else show formatted E.164
       displayPhone.textContent = displayRaw || formatHuman(p);
       if (isValidPhone(p)) {
-        sendBtn.textContent = "ENVOYER UN CODE sur le téléphone terminant par " + last4(p);
+        sendBtn.textContent = "ENVOYER UN CODE sur ... " + last4(p);
         sendBtn.disabled = false;
       } else {
         sendBtn.textContent = "ENVOYER UN CODE";

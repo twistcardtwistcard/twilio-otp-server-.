@@ -1,102 +1,61 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Obtenez votre TWIST code</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --brand: #230042;
-      --error: #d32f2f;
-      --muted: #666;
-    }
+    :root { --brand:#230042; --error:#d32f2f; --muted:#666; }
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       max-width: 420px;
       margin: auto;
-      text-align: left;
       color: #111;
     }
-    h2 {
-      color: var(--brand);
-      margin: 0 0 10px 0;
-      font-size: 22px;
+    h2 { color: var(--brand); margin: 0 0 6px; font-size: 22px; }
+    .sub {
+      color: #111; font-size: 15px; margin: 0 0 16px;
     }
-    p.hint {
-      color: var(--muted);
-      font-size: 14px;
-      margin: 0 0 18px 0;
-      line-height: 1.35;
+    .muted { color: var(--muted); font-size: 13px; }
+    .phone-line { margin: 4px 0 18px; font-weight: 600; }
+    .pill {
+      background: #f4f1f9; color: var(--brand); padding: 3px 10px; border-radius: 999px;
+      display: inline-block; font-size: 13px;
     }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
+    label { font-weight: bold; display: block; margin-top: 12px; }
     input {
-      padding: 10px;
-      margin: 6px 0 14px 0;
-      width: 100%;
-      font-size: 16px;
-      box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      outline: none;
+      padding: 10px; margin: 6px 0 14px; width: 100%; font-size: 16px;
+      border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;
     }
-    input:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 3px rgba(35,0,66,0.12);
-    }
+    input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(35,0,66,0.12); outline: none; }
     button {
-      background-color: var(--brand);
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 17px;
-      border-radius: 30px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 8px;
+      background-color: var(--brand); color: #fff; border: 0; padding: 12px;
+      font-size: 17px; border-radius: 30px; cursor: pointer; width: 100%; margin-top: 8px;
       transition: opacity .15s ease-in-out, transform .02s ease-in-out;
     }
-    button:hover { opacity: 0.92; }
+    button:hover { opacity: .92; }
     button:active { transform: translateY(1px); }
-    button[disabled] {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    button[disabled] { opacity: .6; cursor: not-allowed; }
     .hidden { display: none; }
-    .error {
-      color: var(--error);
-      font-size: 14px;
-      margin-top: 8px;
-      line-height: 1.35;
-    }
-    h4 {
-      color: var(--brand);
-      font-size: 20px;
-      margin-top: 24px;
-    }
-    .note {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
+    .error { color: var(--error); font-size: 14px; margin-top: 8px; line-height: 1.35; }
+    h4 { color: var(--brand); font-size: 20px; margin-top: 22px; }
   </style>
 </head>
 <body>
-
   <h2>Obtenez votre TWIST code</h2>
-  <p class="hint">Entrez votre numéro puis vérifiez le code OTP à 6 chiffres envoyé par SMS.</p>
+  <p class="sub">Entrez le code OTP à 6 chiffres que vous recevrez par SMS.</p>
+  <div class="phone-line">
+    Téléphone : <span id="displayPhone" class="pill">—</span>
+  </div>
 
-  <!-- Étape 1 -->
+  <!-- Étape 1 (aucune saisie du téléphone) -->
   <div id="step1">
-    <label for="phone">Numéro de téléphone (Ex : 14185551234)</label>
-    <input type="tel" id="phone" placeholder="Entrez votre numéro sans le +" autocomplete="tel" inputmode="numeric" />
-    <button id="sendBtn" type="button">Envoyer le code</button>
+    <!-- Stockage interne du téléphone (non modifiable par l’utilisateur) -->
+    <input type="hidden" id="phone" />
+    <button id="sendBtn" type="button" disabled>ENVOYER UN CODE</button>
     <div id="send-error" class="error"></div>
-    <div class="note">Format attendu: 1 + 10 chiffres (ex.: 14185551234).</div>
+    <div class="muted">Si le bouton est grisé, le numéro n’a pas été détecté.</div>
   </div>
 
   <!-- Étape 2 -->
@@ -113,46 +72,51 @@
   </div>
 
   <script>
-    (function() {
-      // ---- Helpers ----
+    (function(){
       const $ = (id) => document.getElementById(id);
-      const phoneInput = $("phone");
-      const sendBtn    = $("sendBtn");
-      const sendErr    = $("send-error");
-      const step1      = $("step1");
 
-      const step2      = $("step2");
-      const otpInput   = $("otp");
-      const verifyBtn  = $("verifyBtn");
-      const verifyErr  = $("verify-error");
+      const phoneHidden = $("phone");
+      const displayPhone = $("displayPhone");
+      const sendBtn = $("sendBtn");
+      const sendErr = $("send-error");
+      const step1 = $("step1");
 
-      const result     = $("result");
-      const middle4El  = $("middle4");
+      const step2 = $("step2");
+      const otpInput = $("otp");
+      const verifyBtn = $("verifyBtn");
+      const verifyErr = $("verify-error");
 
-      function isValidPhone(p) {
-        return /^1\d{10}$/.test(String(p||"").trim());
+      const result = $("result");
+      const middle4El = $("middle4");
+
+      function isValidPhone(p){ return /^1\\d{10}$/.test(String(p||"").trim()); }
+      function last4(p){ return String(p||"").slice(-4); }
+      function formatHuman(p){
+        // Format 1XXXXXXXXXX -> 1 (XXX) XXX-XXXX
+        if (!isValidPhone(p)) return "—";
+        const s = String(p);
+        return `1 (${s.slice(1,4)}) ${s.slice(4,7)}-${s.slice(7,11)}`;
       }
-      function last4(p) {
-        const s = String(p||"").trim();
-        return isValidPhone(s) ? s.slice(-4) : "";
-      }
-      function setSendCtaFromPhone(p) {
+      function updateUIForPhone(p){
+        displayPhone.textContent = formatHuman(p);
         if (isValidPhone(p)) {
-          sendBtn.textContent = "SEND OTP to phone ending in " + last4(p);
+          sendBtn.textContent = "ENVOYER UN CODE sur le téléphone terminant par " + last4(p);
+          sendBtn.disabled = false;
         } else {
-          sendBtn.textContent = "Envoyer le code";
+          sendBtn.textContent = "ENVOYER UN CODE";
+          sendBtn.disabled = true;
         }
       }
-      function setPhoneValue(v) {
-        phoneInput.value = (v || "").trim();
-        setSendCtaFromPhone(phoneInput.value);
+      function setPhone(p){
+        phoneHidden.value = (p||"").trim();
+        updateUIForPhone(phoneHidden.value);
       }
 
-      async function sendOTP() {
-        const phone = phoneInput.value.trim();
+      async function sendOTP(){
+        const phone = phoneHidden.value.trim();
         sendErr.textContent = "";
         if (!isValidPhone(phone)) {
-          sendErr.textContent = "Entrez un numéro valide commençant par 1 (ex: 14185551234).";
+          sendErr.textContent = "Numéro non valide ou introuvable.";
           return;
         }
         sendBtn.disabled = true;
@@ -166,23 +130,23 @@
           if (data && data.success) {
             step1.classList.add("hidden");
             step2.classList.remove("hidden");
-            setTimeout(() => otpInput.focus(), 50);
+            setTimeout(()=>otpInput.focus(),50);
           } else {
             sendErr.textContent = (data && (data.error || data.message)) || "Erreur lors de l'envoi du code.";
           }
-        } catch (e) {
+        } catch(e){
           sendErr.textContent = "Erreur réseau. Réessayez.";
         } finally {
-          sendBtn.disabled = false;
+          sendBtn.disabled = !isValidPhone(phoneHidden.value);
         }
       }
 
-      async function verifyOTP() {
-        const phone = phoneInput.value.trim();
-        const code  = otpInput.value.trim();
+      async function verifyOTP(){
+        const phone = phoneHidden.value.trim();
+        const code = (otpInput.value||"").trim();
         verifyErr.textContent = "";
 
-        if (!/^\d{6}$/.test(code)) {
+        if (!/^\\d{6}$/.test(code)) {
           verifyErr.textContent = "Entrez le code à 6 chiffres reçu par SMS.";
           return;
         }
@@ -201,60 +165,44 @@
           } else {
             verifyErr.textContent = (data && (data.error || data.message)) || "Code invalide.";
           }
-        } catch (e) {
+        } catch(e){
           verifyErr.textContent = "Erreur réseau. Réessayez.";
         } finally {
           verifyBtn.disabled = false;
         }
       }
 
-      // ---- Wire buttons ----
+      // Wire buttons
       sendBtn.addEventListener("click", sendOTP);
       verifyBtn.addEventListener("click", verifyOTP);
-
-      // Enter key UX
-      phoneInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          sendBtn.click();
-        }
-      });
-      otpInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          verifyBtn.click();
-        }
+      otpInput.addEventListener("keydown", (e)=>{
+        if (e.key === "Enter") { e.preventDefault(); verifyBtn.click(); }
       });
 
-      // ---- Prefill via URL (?phone=14185551234) ----
-      (function prefillFromURL(){
+      // Prefill from URL (?phone=14185551234)
+      (function fromURL(){
         try {
           const u = new URL(window.location.href);
-          const p = (u.searchParams.get("phone") || "").trim();
-          if (p) setPhoneValue(p);
+          const p = (u.searchParams.get("phone")||"").trim();
+          if (p) setPhone(p);
         } catch(_) {}
       })();
 
-      // ---- Prefill + trigger via postMessage from parent (SuiteDash) ----
-      window.addEventListener("message", function(e) {
-        // Optional: restrict allowed origins
+      // Prefill / trigger from parent (SuiteDash Custom JS)
+      window.addEventListener("message", function(e){
+        // Optional: restrict origins
         // const allowed = ["https://app.twistcard.ca", "https://twistcard.ca"];
         // if (!allowed.includes(e.origin)) return;
 
         const data = e.data || {};
-        if (data.type === "prefillPhone" && data.phone) {
-          setPhoneValue(data.phone);
-        }
+        if (data.type === "prefillPhone" && data.phone) setPhone(data.phone);
         if (data.type === "triggerSend") {
-          // Only send if phone is valid (prevents errors)
-          if (isValidPhone(phoneInput.value.trim())) {
-            sendBtn.click();
-          }
+          if (isValidPhone(phoneHidden.value)) sendBtn.click();
         }
       });
 
-      // Initial CTA text
-      setSendCtaFromPhone(phoneInput.value);
+      // Initial state
+      updateUIForPhone(phoneHidden.value);
     })();
   </script>
 </body>

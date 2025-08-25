@@ -14,44 +14,38 @@
       color: #111;
     }
     h2 { color: var(--brand); margin: 0 0 6px; font-size: 22px; }
-    .sub {
-      color: #111; font-size: 15px; margin: 0 0 16px;
-    }
-    .muted { color: var(--muted); font-size: 13px; }
-    .phone-line { margin: 4px 0 18px; font-weight: 600; }
-    .pill {
-      background: #f4f1f9; color: var(--brand); padding: 3px 10px; border-radius: 999px;
-      display: inline-block; font-size: 13px;
-    }
-    label { font-weight: bold; display: block; margin-top: 12px; }
+    .sub { color:#111; font-size:15px; margin:0 0 16px; }
+    .phone-line { margin: 4px 0 18px; font-weight:600; }
+    .pill { background:#f4f1f9; color:var(--brand); padding:3px 10px; border-radius:999px; display:inline-block; font-size:13px; }
+    label { font-weight:700; display:block; margin-top:12px; }
     input {
-      padding: 10px; margin: 6px 0 14px; width: 100%; font-size: 16px;
-      border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;
+      padding:10px; margin:6px 0 14px; width:100%; font-size:16px;
+      border:1px solid #ddd; border-radius:8px; box-sizing:border-box;
     }
-    input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(35,0,66,0.12); outline: none; }
+    input:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(35,0,66,.12); outline:none; }
     button {
-      background-color: var(--brand); color: #fff; border: 0; padding: 12px;
-      font-size: 17px; border-radius: 30px; cursor: pointer; width: 100%; margin-top: 8px;
-      transition: opacity .15s ease-in-out, transform .02s ease-in-out;
+      background:var(--brand); color:#fff; border:0; padding:12px; font-size:17px;
+      border-radius:30px; cursor:pointer; width:100%; margin-top:8px; transition:opacity .15s, transform .02s;
     }
-    button:hover { opacity: .92; }
+    button:hover { opacity:.92; }
     button:active { transform: translateY(1px); }
-    button[disabled] { opacity: .6; cursor: not-allowed; }
-    .hidden { display: none; }
-    .error { color: var(--error); font-size: 14px; margin-top: 8px; line-height: 1.35; }
-    h4 { color: var(--brand); font-size: 20px; margin-top: 22px; }
+    button[disabled] { opacity:.6; cursor:not-allowed; }
+    .hidden { display:none; }
+    .error { color:var(--error); font-size:14px; margin-top:8px; line-height:1.35; }
+    h4 { color:var(--brand); font-size:20px; margin-top:22px; }
+    .muted { color:var(--muted); font-size:13px; }
   </style>
 </head>
 <body>
   <h2>Obtenez votre TWIST code</h2>
-  <p class="sub">Entrez le code OTP à 6 chiffres que vous recevrez par SMS.</p>
+  <p class="sub">Entrez le code OTP à 6&nbsp;chiffres que vous recevrez par SMS.</p>
   <div class="phone-line">
     Téléphone : <span id="displayPhone" class="pill">—</span>
   </div>
 
   <!-- Étape 1 (aucune saisie du téléphone) -->
   <div id="step1">
-    <!-- Stockage interne du téléphone (non modifiable par l’utilisateur) -->
+    <!-- Stockage interne (non modifiable) -->
     <input type="hidden" id="phone" />
     <button id="sendBtn" type="button" disabled>ENVOYER UN CODE</button>
     <div id="send-error" class="error"></div>
@@ -72,138 +66,152 @@
   </div>
 
   <script>
-    (function(){
-      const $ = (id) => document.getElementById(id);
+  (function(){
+    const $ = (id) => document.getElementById(id);
 
-      const phoneHidden = $("phone");
-      const displayPhone = $("displayPhone");
-      const sendBtn = $("sendBtn");
-      const sendErr = $("send-error");
-      const step1 = $("step1");
+    const phoneHidden  = $("phone");
+    const displayPhone = $("displayPhone");
+    const sendBtn      = $("sendBtn");
+    const sendErr      = $("send-error");
+    const step1        = $("step1");
 
-      const step2 = $("step2");
-      const otpInput = $("otp");
-      const verifyBtn = $("verifyBtn");
-      const verifyErr = $("verify-error");
+    const step2        = $("step2");
+    const otpInput     = $("otp");
+    const verifyBtn    = $("verifyBtn");
+    const verifyErr    = $("verify-error");
 
-      const result = $("result");
-      const middle4El = $("middle4");
+    const result       = $("result");
+    const middle4El    = $("middle4");
 
-      function isValidPhone(p){ return /^1\\d{10}$/.test(String(p||"").trim()); }
-      function last4(p){ return String(p||"").slice(-4); }
-      function formatHuman(p){
-        // Format 1XXXXXXXXXX -> 1 (XXX) XXX-XXXX
-        if (!isValidPhone(p)) return "—";
-        const s = String(p);
-        return `1 (${s.slice(1,4)}) ${s.slice(4,7)}-${s.slice(7,11)}`;
+    // --- Helpers ---
+    function digits(s){ return String(s||"").replace(/\D+/g, ""); }
+    function normalizeTo1Plus10(v){
+      const d = digits(v);
+      if (d.length >= 10) {
+        const last10 = d.slice(-10);
+        return "1" + last10;
       }
-      function updateUIForPhone(p){
-        displayPhone.textContent = formatHuman(p);
-        if (isValidPhone(p)) {
-          sendBtn.textContent = "ENVOYER UN CODE sur le téléphone terminant par " + last4(p);
-          sendBtn.disabled = false;
-        } else {
-          sendBtn.textContent = "ENVOYER UN CODE";
-          sendBtn.disabled = true;
-        }
-      }
-      function setPhone(p){
-        phoneHidden.value = (p||"").trim();
-        updateUIForPhone(phoneHidden.value);
-      }
-
-      async function sendOTP(){
-        const phone = phoneHidden.value.trim();
-        sendErr.textContent = "";
-        if (!isValidPhone(phone)) {
-          sendErr.textContent = "Numéro non valide ou introuvable.";
-          return;
-        }
+      return "";
+    }
+    function isValidPhone(p){ return /^1\d{10}$/.test(String(p||"").trim()); }
+    function last4(p){ return String(p||"").slice(-4); }
+    function formatHuman(p){
+      if (!isValidPhone(p)) return "—";
+      const s = String(p);
+      return `1 (${s.slice(1,4)}) ${s.slice(4,7)}-${s.slice(7,11)}`;
+    }
+    function updateUIForPhone(p, displayRaw){
+      // If parent provides a human display string, show it; else show formatted E.164
+      displayPhone.textContent = displayRaw || formatHuman(p);
+      if (isValidPhone(p)) {
+        sendBtn.textContent = "ENVOYER UN CODE sur le téléphone terminant par " + last4(p);
+        sendBtn.disabled = false;
+      } else {
+        sendBtn.textContent = "ENVOYER UN CODE";
         sendBtn.disabled = true;
-        try {
-          const res = await fetch("/send-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone })
-          });
-          const data = await res.json();
-          if (data && data.success) {
-            step1.classList.add("hidden");
-            step2.classList.remove("hidden");
-            setTimeout(()=>otpInput.focus(),50);
-          } else {
-            sendErr.textContent = (data && (data.error || data.message)) || "Erreur lors de l'envoi du code.";
-          }
-        } catch(e){
-          sendErr.textContent = "Erreur réseau. Réessayez.";
-        } finally {
-          sendBtn.disabled = !isValidPhone(phoneHidden.value);
-        }
       }
+    }
+    function setPhone(p, displayRaw){
+      const e164 = normalizeTo1Plus10(p);
+      phoneHidden.value = e164;
+      updateUIForPhone(e164, displayRaw);
+    }
 
-      async function verifyOTP(){
-        const phone = phoneHidden.value.trim();
-        const code = (otpInput.value||"").trim();
-        verifyErr.textContent = "";
-
-        if (!/^\\d{6}$/.test(code)) {
-          verifyErr.textContent = "Entrez le code à 6 chiffres reçu par SMS.";
-          return;
-        }
-        verifyBtn.disabled = true;
-        try {
-          const res = await fetch("/verify-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone, code })
-          });
-          const data = await res.json();
-          if (data && data.success) {
-            step2.classList.add("hidden");
-            result.classList.remove("hidden");
-            middle4El.textContent = data.middle4 || "";
-          } else {
-            verifyErr.textContent = (data && (data.error || data.message)) || "Code invalide.";
-          }
-        } catch(e){
-          verifyErr.textContent = "Erreur réseau. Réessayez.";
-        } finally {
-          verifyBtn.disabled = false;
-        }
+    // --- Actions ---
+    async function sendOTP(){
+      const phone = phoneHidden.value.trim();
+      sendErr.textContent = "";
+      if (!isValidPhone(phone)) {
+        sendErr.textContent = "Numéro non valide ou introuvable.";
+        return;
       }
-
-      // Wire buttons
-      sendBtn.addEventListener("click", sendOTP);
-      verifyBtn.addEventListener("click", verifyOTP);
-      otpInput.addEventListener("keydown", (e)=>{
-        if (e.key === "Enter") { e.preventDefault(); verifyBtn.click(); }
-      });
-
-      // Prefill from URL (?phone=14185551234)
-      (function fromURL(){
-        try {
-          const u = new URL(window.location.href);
-          const p = (u.searchParams.get("phone")||"").trim();
-          if (p) setPhone(p);
-        } catch(_) {}
-      })();
-
-      // Prefill / trigger from parent (SuiteDash Custom JS)
-      window.addEventListener("message", function(e){
-        // Optional: restrict origins
-        // const allowed = ["https://app.twistcard.ca", "https://twistcard.ca"];
-        // if (!allowed.includes(e.origin)) return;
-
-        const data = e.data || {};
-        if (data.type === "prefillPhone" && data.phone) setPhone(data.phone);
-        if (data.type === "triggerSend") {
-          if (isValidPhone(phoneHidden.value)) sendBtn.click();
+      sendBtn.disabled = true;
+      try {
+        const res = await fetch("/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          step1.classList.add("hidden");
+          step2.classList.remove("hidden");
+          setTimeout(()=>otpInput.focus(), 50);
+        } else {
+          sendErr.textContent = (data && (data.error || data.message)) || "Erreur lors de l'envoi du code.";
         }
-      });
+      } catch (e) {
+        sendErr.textContent = "Erreur réseau. Réessayez.";
+      } finally {
+        // Re-enable only if still valid phone
+        sendBtn.disabled = !isValidPhone(phoneHidden.value);
+      }
+    }
 
-      // Initial state
-      updateUIForPhone(phoneHidden.value);
+    async function verifyOTP(){
+      const phone = phoneHidden.value.trim();
+      const code  = (otpInput.value||"").trim();
+      verifyErr.textContent = "";
+
+      if (!/^\d{6}$/.test(code)) {
+        verifyErr.textContent = "Entrez le code à 6 chiffres reçu par SMS.";
+        return;
+      }
+      verifyBtn.disabled = true;
+      try {
+        const res = await fetch("/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, code })
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          step2.classList.add("hidden");
+          result.classList.remove("hidden");
+          middle4El.textContent = data.middle4 || "";
+        } else {
+          verifyErr.textContent = (data && (data.error || data.message)) || "Code invalide.";
+        }
+      } catch (e) {
+        verifyErr.textContent = "Erreur réseau. Réessayez.";
+      } finally {
+        verifyBtn.disabled = false;
+      }
+    }
+
+    // --- Wire buttons ---
+    sendBtn.addEventListener("click", sendOTP);
+    verifyBtn.addEventListener("click", verifyOTP);
+    otpInput.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") { e.preventDefault(); verifyBtn.click(); }
+    });
+
+    // --- Prefill from URL (?phone=...) ---
+    (function fromURL(){
+      try {
+        const u = new URL(window.location.href);
+        const p = (u.searchParams.get("phone")||"").trim();
+        if (p) setPhone(p);
+      } catch(_) {}
     })();
+
+    // --- Prefill / trigger from parent (SuiteDash) ---
+    window.addEventListener("message", function(e){
+      // Optional: restrict origins
+      // const allowed = ["https://app.twistcard.ca", "https://twistcard.ca"];
+      // if (!allowed.includes(e.origin)) return;
+      const data = e.data || {};
+      if (data.type === "prefillPhone" && (data.phone || data.display)) {
+        setPhone(data.phone || "", data.display || "");
+      }
+      if (data.type === "triggerSend") {
+        if (isValidPhone(phoneHidden.value)) sendBtn.click();
+      }
+    });
+
+    // Initial state
+    updateUIForPhone(phoneHidden.value);
+  })();
   </script>
 </body>
 </html>
